@@ -1,0 +1,71 @@
+﻿@{
+    ViewData["Title"] = "Tags";
+    var existingTags = ViewBag.Tags as List<string>;
+}
+
+<h2>Tags</h2>
+
+<form id="tagsForm">
+    <input name='tags' id="tagsInput" placeholder='Type something' autofocus>
+    <button type="submit">Save Tags</button>
+</form>
+
+<!-- Include Tagify CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tagify/4.27.0/tagify.css">
+
+<!-- Include Tagify JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tagify/4.27.0/tagify.min.js"></script>
+
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Initialize Tagify
+        var input = document.querySelector('#tagsInput');
+        var tagify = new Tagify(input, {
+            whitelist: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(existingTags)),
+            enforceWhitelist: false,
+            editTags: 1  // enable editing of tags with a single click
+        });
+
+        // Preload existing tags
+        tagify.addTags(@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(existingTags)));
+
+        // Handle form submission
+        $('#tagsForm').submit(function (e) {
+            e.preventDefault();
+
+            var tags = tagify.value.map(tag => tag.value);
+            $.ajax({
+                url: '@Url.Action("UpdateTags", "Tags")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(tags),
+                success: function (data) {
+                    alert(data.message);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+        // Handle tag removal
+        tagify.on('remove', function (e) {
+            var tag = e.detail.data.value;
+            $.ajax({
+                url: '@Url.Action("DeleteTag", "Tags")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(tag),  // Send as a simple string
+                success: function (data) {
+                    alert(data.message);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+    });
+</script>
